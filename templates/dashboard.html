@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <div>
+        <h1>Email Dashboard</h1>
+        <p>Your local AI email triage overview.</p>
+    </div>
+
+    <form method="post" action="{{ url_for('dashboard.run_scan') }}">
+        <button type="submit">Run Scan Now</button>
+    </form>
+</section>
+
+<section class="stats-grid">
+    <div class="card">
+        <div class="label">Total Emails</div>
+        <div class="value">{{ stats.total_emails }}</div>
+    </div>
+
+    <div class="card">
+        <div class="label">Classified</div>
+        <div class="value">{{ stats.total_classifications }}</div>
+    </div>
+
+    <div class="card">
+        <div class="label">High Priority</div>
+        <div class="value">{{ stats.high_priority }}</div>
+    </div>
+
+    <div class="card">
+        <div class="label">Needs Reply</div>
+        <div class="value">{{ stats.needs_reply }}</div>
+    </div>
+</section>
+
+<section class="panel">
+    <h2>Recent Email Classifications</h2>
+
+    {% if recent %}
+        <div class="email-list">
+            {% for item in recent %}
+                <article class="email-card urgency-{{ item.urgency }}">
+                    <div class="email-header">
+                        <div>
+                            <h3>{{ item.subject or "(No subject)" }}</h3>
+                            <p>{{ item.sender }}</p>
+                        </div>
+                        <span class="badge">{{ item.urgency }}</span>
+                    </div>
+
+                    <p class="summary">{{ item.summary }}</p>
+
+                    <div class="meta">
+                        <span>Score: {{ item.importance_score }}</span>
+                        <span>Needs reply: {{ "Yes" if item.needs_reply else "No" }}</span>
+                        <span>Category: {{ item.category }}</span>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>No classifications yet. Click <strong>Run Scan Now</strong> to start.</p>
+    {% endif %}
+</section>
+{% endblock %}
