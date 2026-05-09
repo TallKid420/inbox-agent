@@ -15,15 +15,23 @@ class OllamaProvider(BaseLLMProvider):
 
     def classify_email(self, subject, sender, body):
         prompt = f"""
-Return ONLY JSON.
+Return ONLY valid JSON.
 
 Subject: {subject}
 Sender: {sender}
 Body:
 {body[:6000]}
 
-Fields:
-importance_score, urgency, needs_reply, category, summary
+You MUST include ALL fields:
+- importance_score (float 0-1)
+- urgency (low, medium, high)
+- needs_reply (true/false)
+- category (promo, security, billing, personal, work, other)
+- summary (string)
+- reason (string explaining classification)
+
+Do NOT omit any field.
+Do NOT wrap in markdown.
 """
 
         resp = self.llm.invoke(prompt)
