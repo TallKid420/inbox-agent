@@ -28,7 +28,7 @@ def dashboard():
         "needs_reply": db.count_needs_reply() if hasattr(db, "count_needs_reply") else 0,
     }
 
-    recent = db.get_recent_classifications(limit=10) if hasattr(db, "get_recent_classifications") else []
+    recent = db.get_recent_classifications(limit=50) if hasattr(db, "get_recent_classifications") else []
 
     return render_template(
         "dashboard.html",
