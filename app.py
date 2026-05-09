@@ -1,68 +1,37 @@
-print("Importing Packages")
+from utils.logger import setup_logger
 
-from ai.robust_classifier import RobustClassifier
-from services.gmail_service import GmailService
-from services.email_parser import EmailParser
+log = setup_logger("app")
+
+log.info("Starting Email Agent System...")
+
+from services.scan_service import ScanService
+from services.scheduler import ScanScheduler
 from ai.llm.manager import LLMManager
-from storage.db import Database
+from ai.robust_classifier import RobustClassifier
+import time
 
 
-
-print("Packages Imported")
 
 def main():
-    # 1. Authenticate Gmail
-    gmail = GmailService()
-    service = gmail.authenticate()
-
-    db = Database()
-
-    print("Connected to Gmail API successfully.")
-
-    # 2. Fetch emails
-    parser = EmailParser()
-    emails = parser.fetch_last_24h_emails(service)
-
-    print(f"\nFetched {len(emails)} emails\n")
-
-    # 3. Load LLM (swap provider here)
+    log.info("Initializing LLM...")
     llm = LLMManager(provider_name="ollama")
-    classifier = RobustClassifier(llm)
 
-    # 4. Process each email
-    for i, email in enumerate(emails, start=1):
-        
-        db.insert_email(email)
+    scan_service = ScanService(
+        llm=llm,
+        classifier=RobustClassifier(llm)
+    )
+    
+    scheduler = ScanScheduler(scan_service)
+    scheduler.start()
 
-        try:
-            result = classifier.classify_email(
-                subject=email.get("subject", ""),
-                sender=email.get("sender", ""),
-                body=email.get("body", "")
-            )
-            if result.get("llm_error"):
-                print("\n⚠️ LLM FAILURE DETECTED")
-                print("Error:", result["llm_error"])
-                print("Attempts:", result["attempts"])
+    log.info("System running. Scheduler active.")
 
-            print(f"\n================== EMAIL {i}/{len(emails)} ==================")
-            print(f"Subject: {email.get('subject')}")
-            print(f"Sender: {email.get('sender')}")
-            print(f"Urgency: {result.get('urgency')}")
-            print(f"Score: {result.get('importance_score')}")
-            print(f"Needs Reply: {result.get('needs_reply')}")
-            print(f"Category: {result.get('category')}")
-            print(f"Summary: {result.get('summary')}")
-
-            db.insert_classification(email["id"], result)
-
-        except Exception as e:
-            print(f"\n================== EMAIL {i}/{len(emails)} ==================")
-            print(f"Subject: {email.get('subject')}")
-            print("ERROR processing email:", str(e))
-
-        
+    while True:
+        time.sleep(60)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        log.info("Exiting...")
